@@ -3,3 +3,4 @@
 *.lnk
 
 /.idea/
+/htdocs/vendor/
