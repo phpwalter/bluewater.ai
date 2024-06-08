@@ -1,6 +1,6 @@
 # Bluewater.ai
 
-About time we join the AI bandwagon!
+It's about time we join the AI bandwagon!
 
 ## Install
 
