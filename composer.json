@@ -1,53 +1,57 @@
 {
-    "name": "bluewater/bluewater8",
-    "description": "PHP v8 MCV Framework",
-    "version": "8.0.0",
-    "type": "library",
-    "keywords": ["Bluewater", "MVC", "PHP", "PHP8"],
-    "homepage": "https://bluewater.com",
-    "time": "20121-12-01",
-    "license": "http://opensource.org/licenses/osl-3.0.php",
-    "authors": [
-        {
-            "name": "Walter Torres",
-            "email": "phpwalter@torres.ws"
-        }
-    ],
-    "autoload": {
-        "psr-0": {
-            "Bluewater": "library"
-        }
-    },
-    "require": {
-        "php" : ">=8.0",
-
-        "ext-curl": "*",
-        "ext-dom": "*",
-        "ext-filter": "*",
-        "ext-json": "*",
-        "ext-libxml": "*",
-        "ext-gettext": "*",
-        "ext-mbstring": "*",
-        "ext-mysqli": "*",
-        "ext-simplexml": "*",
-        "ext-tokenizer": "*",
-        "ext-xml": "*",
-        "ext-xmlwriter": "*",
-
-        "php-http/curl-client": "*",
-        "guzzlehttp/psr7": "*",
-        "justinrainbow/json-schema": "*"
-    },
-    "require-dev": {
-        "ext-xdebug": "*",
-        "squizlabs/php_codesniffer": "3.*@RC",
-        "composer/xdebug-handler": "*",
-        "roave/security-advisories": "dev-master",
-        "phpunit/phpunit": "*"
-    },
-    "config": {
-        "allow-plugins": {
-            "php-http/discovery": true
-        }
+  "name": "bluewater/bluewater8",
+  "description": "PHP v8 MCV Framework",
+  "version": "8.0.0",
+  "type": "library",
+  "keywords": [
+    "Bluewater",
+    "MVC",
+    "PHP",
+    "PHP8"
+  ],
+  "homepage": "https://bluewater.com",
+  "time": "20121-12-01",
+  "license": "http://opensource.org/licenses/osl-3.0.php",
+  "authors": [
+    {
+      "name": "Walter Torres",
+      "email": "phpwalter@torres.ws"
     }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Bluewater\\": "Bluewater/"
+    }
+  },
+  "require": {
+    "php": ">=8.0",
+    "ext-curl": "*",
+    "ext-dom": "*",
+    "ext-filter": "*",
+    "ext-json": "*",
+    "ext-libxml": "*",
+    "ext-gettext": "*",
+    "ext-mbstring": "*",
+    "ext-mysqli": "*",
+    "ext-simplexml": "*",
+    "ext-tokenizer": "*",
+    "ext-xml": "*",
+    "ext-xmlwriter": "*",
+    "php-http/curl-client": "*",
+    "guzzlehttp/psr7": "*",
+    "justinrainbow/json-schema": "*",
+    "vlucas/phpdotenv": "^5.6"
+  },
+  "require-dev": {
+    "ext-xdebug": "*",
+    "squizlabs/php_codesniffer": "3.*@RC",
+    "composer/xdebug-handler": "*",
+    "roave/security-advisories": "dev-master",
+    "phpunit/phpunit": "*"
+  },
+  "config": {
+    "allow-plugins": {
+      "php-http/discovery": true
+    }
+  }
 }
