@@ -86,6 +86,21 @@ define('DS', DIRECTORY_SEPARATOR);
  */
 define('SITE_ROOT', DS . 'var' . DS . 'www' . DS . 'Bluewater');
 
+/**
+ * BLUEWATER defines where all the Bluewater Core files reside.
+ *
+ * This is a child directory of LIBRARY
+ * Do not place a slash at the end of this path.
+ *
+ * @name     BLUEWATER
+ * @constant string
+ *
+ * @since    1.0
+ *
+ */
+define('BLUEWATER', SITE_ROOT . DS . 'Bluewater');
+
+
 require_once SITE_ROOT . DS . 'vendor/autoload.php';
 
 /**
