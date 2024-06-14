@@ -1,9 +1,10 @@
 {
-  "name": "bluewater/bluewater8",
+  "name": "bluewater/bluewater",
   "description": "PHP v8 MCV Framework",
   "version": "8.0.0",
   "type": "library",
   "keywords": [
+    "AI",
     "Bluewater",
     "MVC",
     "PHP",
@@ -20,6 +21,7 @@
   ],
   "autoload": {
     "psr-4": {
+      "App\\": "App/",
       "Bluewater\\": "Bluewater/"
     }
   },
