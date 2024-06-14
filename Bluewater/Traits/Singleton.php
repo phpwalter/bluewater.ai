@@ -1,106 +1,82 @@
 <?php
 
+declare(strict_types=1);
+
 /**
- * PHP Singleton Control Class
+ * Singleton Trait
  *
- * This file is part of Bluewater 8 MVC.<br />
- * <i>Copyright (c) 2006 - 2021 Walter Torres <walter@torres.ws></i>
+ * Singleton instance trait to ensure only single instance of any class using this trait.
+ * Exception handling is done in more extensive way.
  *
- * <b>NOTICE OF LICENSE</b><br />
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.
- * It is also available through the world-wide-web at:
- * {@link http://opensource.org/licenses/osl-3.0.php}.<br />
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@bluewatermvc.org so one can be sent to you immediately.
+ * PHP Version >= 8.0
  *
- * <b>DISCLAIMER</b><br />
- * Do not modify to this file if you wish to upgrade Bluewater 8 MVC
- * in the future. If you wish to customize Bluewater 8 MVC for your needs
- * please refer to {@link http://web.bluewatermvc.org} for more information.
- *
- * PHP version 7+
- *
- * @package     Bluewater8_Core
- * @subpackage  Bluewater_Singleton
- * @link        http://web.bluewatermvc.org
- *
- * @copyright   Copyright (c) 2006 - 2021 Walter Torres <walter@torres.ws>
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
- *
- * @filesource
+ * @category Singleton
+ * @package  Traits
+ * @author   Walter Torres <walter@torres.ws>
+ * @link     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  *
  */
 
-declare(strict_types=1); // strict mode
 namespace Bluewater\Traits;
 
 use Exception;
 
 /**
- * PHP Singleton Control Class
+ * Managing Singleton Instances
  *
- * @author Grzegorz Synowiec - https://gist.github.com/Mikoj
- * @link https://gist.github.com/Mikoj
- *
- * @package     Bluewater_Core
- * @subpackage  Bluewater_Singleton
- *
- * @PHPUnit Not Defined
- *
- * @tutorial tutorial.pkg description
- * @example url://path/to/example.php description
+ * @category Singleton
+ * @package  Traits
+ * @author   Walter Torres <walter@torres.ws>
+ * @link     http://web.bluewatermvc.org
  *
  */
 trait Singleton
 {
+
+// ==========================================================
+// Class Traits
+
 // ==========================================================
 // Class Constants
 
 // ==========================================================
 // Class Properties
 
-    /** @var array $instances */
+    /**
+     * Array to hold instances
+     *
+     * @var array
+     */
     private static array $instances = [];
+
 
 // ==========================================================
 // Class Methods
 
     /**
-     * Class constructor
+     * Singleton Implementation
      *
-     * This is passed up to the parent class
+     * getInstance method returns a singleton instance
+     * of the class. If $forceNewInstance is set to true,
+     * it will force to create a new instance despite a
+     * instance has already been created
      *
-     * @private
+     * @param bool $forceNewInstance flag to force creation of new instance
      *
-     * @param void
-     * @return void
-     *
-     * @since 1.0
-     *
-     */
-    abstract protected function __construct();
-
-    /**
-     * Singleton instance
-     *
-     * Determines if this class has been instantiated before, if so, sends back that Object,
-     * if not, create a new one, stores it and sends that new one back.
-     *
-     * @param boolean $forceNewInstance Force a new instance regardless of previous state
-     *
-     * @return object Singleton instance of the class.
+     * @return object Singleton Instance of the class
+     * @throws Exception
      */
     final public static function getInstance(bool $forceNewInstance = false): object
     {
         $called_class = static::class;
-        $forceNewInstance = $forceNewInstance ?? false;
+
         if ($forceNewInstance || !isset(static::$instances[$called_class])) {
             try {
                 static::$instances[$called_class] = new $called_class();
-            } catch (Exception $e) {
-                echo 'Caught exception: ' . $e->getMessage() . "\n";
+            } catch (Exception $exception) {
+                throw new Exception(
+                    "An exception occurred while creating an singleton instance: " . $exception->getMessage()
+                );
             }
         }
 
@@ -108,15 +84,7 @@ trait Singleton
     }
 
     /**
-     * Prevent singletons from being cloned
-     *
-     * @private
-     *
-     * @param void
-     * @return void
-     *
-     * @since 1.0
-     *
+     * Singleton Classes should not be clone-able
      */
     private function __clone()
     {
@@ -124,17 +92,10 @@ trait Singleton
     }
 
     /**
-     * Prevent singletons from being serialized
+     * Singleton Classes should not be serialized
      *
-     * @private
-     *
-     * @param void
-     * @return void
-     *
+     * @return array
      * @throws Exception
-     *
-     * @since 1.0
-     *
      */
     public function __sleep(): array
     {
@@ -142,23 +103,23 @@ trait Singleton
     }
 
     /**
-     * Prevent singletons from being unserialized
+     * Singleton Classes should not be un-serialized
      *
-     * @access final
-     * @private
-     *
-     * @param void
      * @return void
-     *
      * @throws Exception
-     *
-     * @since 1.0
-     *
      */
-    public function __wakeup()
+    public function __wakeup(): void
     {
         throw new Exception('Cannot unserialize singleton');
     }
+
+    /**
+     * Declare an abstract constructor to ensure Singleton class will not be instantiated directly
+     *
+     * @abstract
+     */
+    abstract protected function __construct();
+
 }
 
-// eof
+# eof
