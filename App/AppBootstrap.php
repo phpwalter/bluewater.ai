@@ -62,23 +62,23 @@ namespace App;
 //       "index.php" located in your application web root.
 
 
-use const DS;
+/**
+ * APP_ROOT defines where all the Application specific files reside.
+ *
+ * This should be outside your web-accessible directories.
+ * Do not place a slash at the end of this path.
+ *
+ * @constant string
+ *
+ * @since    1.0
+ *
+ */
 
+const APP_ROOT = SITE_ROOT . DS . 'App';
 
 class AppBootstrap
 {
-    /**
-     * APP_ROOT defines where all the Application specific files reside.
-     *
-     * This should be outside your web-accessible directories.
-     * Do not place a slash at the end of this path.
-     *
-     * @constant string
-     *
-     * @since    1.0
-     *
-     */
-    public const APP_ROOT = SITE_ROOT . DS . 'App';
+
 
     /**
      * APP_CONFIG defines where all the Application specific CONFIG files reside.
@@ -92,7 +92,7 @@ class AppBootstrap
      *
      */
 
-    public const APP_CONFIG = self::APP_ROOT . DS . 'Config';
+    public const APP_CONFIG = APP_ROOT . DS . 'Config';
 
     /**
      * APP_HELPER defines where all the Application specific HELPER files reside.
@@ -105,7 +105,7 @@ class AppBootstrap
      * @since    1.0
      *
      */
-    public const APP_HELPER = self::APP_ROOT . DS . 'Helper';
+    public const APP_HELPER = APP_ROOT . DS . 'Helper';
 
     /**
      * APP_PLUGIN defines where all the Application specific Plugin files reside.
@@ -118,7 +118,7 @@ class AppBootstrap
      * @since    1.0
      *
      */
-    public const APP_PLUGIN = self::APP_ROOT . DS . 'Plugin';
+    public const APP_PLUGIN = APP_ROOT . DS . 'Plugin';
 
     /**
      * APP_MODULE defines where all the Application specific Module files reside.
@@ -131,7 +131,7 @@ class AppBootstrap
      * @since    1.0
      *
      */
-    public const APP_MODULE = self::APP_ROOT . DS . 'Modules';
+    public const APP_MODULE = APP_ROOT . DS . 'Modules';
 
     /**
      * APP_LOGS defines where all the Application specific Log files reside.
@@ -144,7 +144,7 @@ class AppBootstrap
      * @since    1.0
      *
      */
-    public const APP_LOGS = self::APP_ROOT . DS . 'Logs';
+    public const APP_LOGS = APP_ROOT . DS . 'Logs';
 
     /**
      * APP_COLLECTIONS defines where all the Application specific Collections files reside.
@@ -157,7 +157,7 @@ class AppBootstrap
      * @since    1.0
      *
      */
-    public const APP_COLLECTIONS = self::APP_ROOT . DS . 'Collections';
+    public const APP_COLLECTIONS = APP_ROOT . DS . 'Collections';
 
     /**
      * APP_MVC defines where all the Application specific MVC files reside.
@@ -170,7 +170,7 @@ class AppBootstrap
      * @since    1.0
      *
      */
-    public const APP_MVC = self::APP_ROOT . DS . 'MVC';
+    public const APP_MVC = APP_ROOT . DS . 'MVC';
 
     /**
      * APP_MODEL defines where all the Application specific Model files reside.
@@ -183,7 +183,7 @@ class AppBootstrap
      * @since    1.0
      *
      */
-    public const APP_MODEL = self::APP_ROOT . DS . 'MVC' . DS . 'Model';
+    public const APP_MODEL = APP_ROOT . DS . 'MVC' . DS . 'Model';
 
     /**
      * APP_CONTROL defines where all the Application specific Control files reside.
@@ -196,7 +196,7 @@ class AppBootstrap
      * @since    1.0
      *
      */
-    public const APP_CONTROL = self::APP_ROOT . DS . 'MVC' . DS . 'Controller';
+    public const APP_CONTROL = APP_ROOT . DS . 'MVC' . DS . 'Controller';
 
     /**
      * APP_VIEW defines where all the Application specific View files reside.
@@ -209,7 +209,7 @@ class AppBootstrap
      * @since    1.0
      *
      */
-    public const APP_VIEW = self::APP_ROOT . DS . 'MVC' . DS . 'View';
+    public const APP_VIEW = APP_ROOT . DS . 'MVC' . DS . 'View';
 
     /**
      * APP_TEMPLATE defines where all the Application specific Template files reside.
@@ -222,7 +222,7 @@ class AppBootstrap
      * @since    1.0
      *
      */
-    public const APP_TEMPLATE = self::APP_ROOT . DS . 'MVC' . DS . 'View' . DS . 'Templates';
+    public const APP_TEMPLATE = APP_ROOT . DS . 'MVC' . DS . 'View' . DS . 'Templates';
 
     public function __construct()
     {

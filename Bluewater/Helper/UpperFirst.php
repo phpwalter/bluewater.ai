@@ -10,7 +10,7 @@ class UpperFirst
 {
     /**
      * Capitalize the first letter of a string.
-     * @param array $args )
+     * @param array $args
      * @return string
      */
     public function helper(array $args): string
@@ -19,4 +19,4 @@ class UpperFirst
     }
 }
 
-#eof
+// eof

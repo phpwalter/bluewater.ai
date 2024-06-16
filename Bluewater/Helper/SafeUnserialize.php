@@ -41,13 +41,6 @@ declare(strict_types=1);
 
 namespace Bluewater\Helper;
 
-use Bluewater\Traits\Helper;
-
-use function array_keys;
-use function array_merge;
-use function array_search;
-use function array_splice;
-use function is_int;
 
 /**
  * Helper class to recursively merges arrays.
@@ -60,7 +53,7 @@ use function is_int;
  * approach).
  *
  * @package     Bluewater_Core
- * @subpackage  Helper
+ * @subpackage  SafeUnserialize
  *
  * @example /examples
  *
@@ -68,12 +61,11 @@ use function is_int;
  * @version $Revision: 1.0 $
  *
  */
-class Safe_Unserialize
+class SafeUnserialize
 {
 
 // ==========================================================
 // Class Traits
-    use Helper;
 
 // ==========================================================
 // Class Constants

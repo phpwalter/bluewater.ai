@@ -6,6 +6,9 @@ namespace Bluewater;
 
 use Bluewater\Helper\Helper;
 use Bluewater\Traits\Singleton;
+use DirectoryIterator;
+use Bluewater\Exception\BluewaterException;
+
 
 /**
  * Allows for multidimensional ini files.
@@ -20,8 +23,8 @@ use Bluewater\Traits\Singleton;
  * [development:production]
  * localhost.database.host = localhost
  *
- * This class allows you to convert the specified ini file into a multi-dimensional
- * array. In this case the structure generated will be:
+ * This class allows you to convert the specified ini file into a multidimensional
+ * array. In this case, the structure generated will be:
  *
  * array
  *   'localhost' =>
@@ -73,166 +76,116 @@ use Bluewater\Traits\Singleton;
  */
 class Config
 {
-
-// ==========================================================
-// Class Traits
     use Singleton;
 
-// ==========================================================
-// Class Constants
-    private const string CONFIG_PATH = '/Config';
-    private const string INI_EXTENSION = '.ini.php';
-
-// ==========================================================
-// Class Properties
-
-    /**
-     * Class instance
-     *
-     * @var string
-     * @access private
-     * @static
-     *
-     * @since 1.0
-     */
+    private const CONFIG_PATH = '/Config';
+    private const INI_EXTENSION = '.ini.php';
     private static string $saveFile = BLUEWATER . '/Bluewater.ini';
+    private static ?Helper $helper = null;
+    private static ?array $conf = null;
 
     /**
-     * Helper Object Container
-     *
-     * @var Helper $helper
-     * @access private
-     * @static
-     *
-     * @since 1.0
+     * Config constructor
+     * @param bool $process_sections If sections in the INI file should be processed
+     * @throws BluewaterException
+     * @throws Exception
      */
-    private static Helper $helper;
-
-// ==========================================================
-// Class Methods
-
-
-    final protected function __construct(bool $process_sections = true)
+    public function __construct(bool $process_sections = true)
     {
-        // Load Helper Support Class
         self::$helper = Helper::getInstance();
 
-        if (!self::loadConf()) {
-            // Path to main Config file to load raw data
-            try {
-                self::load(BLUEWATER . '/Bluewater.ini.php', $process_sections);
-            } catch (BluewaterException $e) {
-                throw new BluewaterException ((string)$e);
-            }
-
-            $this->loadAllAppConfigFiles($process_sections);
-
-            // Load all INI files in APP Config directory
-//            if( is_dir(\APP_ROOT . '/Config') ) {
-//                foreach (new DirectoryIterator(\APP_ROOT . '/Config') as $ini_file) {
-//                    if ($ini_file->isFile()) {
-//                        if (str_ends_with($ini_file->getFilename(), 'ini.php')) {
-//                            self::load(\APP_ROOT . '/Config/' . $ini_file->getFilename(), $process_sections);
-//                        }
-//                    }
-//                }
-//
-//                // Parse config data
-//                self::parse();
-//
-//                // Transfer temp data into config array
-//                self::$conf = self::$result;
-//                self::$result = null;
-//
-//                // Process i18n settings
-//                /**
-//                 * @TODO get bindtextdomain/gnu_gettext.dll to work
-//                 */
-////        self::setLocale();
-//
-//
-//                /**
-//                 * @TODO need to thrown an exception if TZ is not defined
-//                 */
-//                if (self::config('general', 'tz')) {
-//                    // Set default TZ
-//                    date_default_timezone_set((string)self::config('general', 'tz'));
-//                }
-//
-//                self::saveConf();
-//            }
-//            else {
-//                throw new BluewaterException ('"' . \APP_ROOT . '/Config" not found');
-//            }
+        try {
+            $this->loadAllConf($process_sections);
+        } catch (BluewaterException $e) {
+            throw $e;
         }
     }
 
     /**
-     * Attempt to load SERIALIZED conf data
-     *
-     * @param void
-     * @return bool
-     *
-     * @uses property $conf
-     *
-     * @static
-     *
-     * @author Walter Torres <walter@torres.ws>
-     *
-     * @uses property $saveFile
-     * @since 1.0
-     *
-     * @PHPUnit Not Defined
+     * Loads all configuration files
+     * @throws BluewaterException
      */
-    private static function loadConf(): bool
+    private function loadAllConf(): mixed
+    {``
+        $baseName = 'Bluewater.ini';
+        $alternativeName = 'Bluewater.ini.php';
+
+        if (file_exists($baseName)) {
+            $data = file_get_contents($baseName);
+            if ($unserializedData = @unserialize($data)) {
+                return $unserializedData;
+            }
+        }
+
+        if (file_exists($alternativeName)) {
+            return $this->parseIniFile($alternativeName);
+        }
+
+        throw new InvalidArgumentException("No valid configuration file found.");
+    }
+
+    /**
+     * Returns an array of config files names from the given directory
+     * @param string $directory The directory to search for config files
+     * @return array array of config files names
+     */
+    private function getConfigFiles(string $directory): array
     {
-        $success = false;
+        $configFiles = [];
 
-        $configData = self::loadAndParseConfig();
+        if (is_dir($directory)) {
+            foreach (new DirectoryIterator($directory) as $fileInfo) {
+                $fileName = $fileInfo->getFilename();
 
-        if ($configData !== null) {
-            self::$conf = $configData['conf'];
-
-            // Define constants from the configuration data
-            foreach ($configData['constants'] as $constant => $value) {
-                if (!defined(strtoupper($constant))) {
-                    define(strtoupper($constant), $value);
+                if ($fileInfo->isFile() && str_ends_with($fileName, self::INI_EXTENSION)) {
+                    $configFiles[] = $fileInfo->getPath();
                 }
             }
-            $success = true;
         }
 
-        return $success;
+        return $configFiles;
     }
 
     /**
-     * Load and parse configuration data from a file
-     *
-     * @static
-     *
-     * @return ?array The parsed configuration data if successful, or null on failure
-     *
-     * @since 1.0
+     * Load and parse Serialized configuration data from a file
+     * @return bool|array The parsed configuration data if successful, or null on failure
      */
-    private static function loadAndParseConfig(): ?array
+    private static function loadSerializedConf(): bool|array
     {
+        $configData = null;
+
+        serialize();
+        echo self::$saveFile . '<br>';
+        echo __LINE__ . '<br>';
+        echo __FUNCTION__ . '<p>';
+
         try {
-            $configData = self::$helper->safe_unserialize(self::$saveFile);
-            //    $configData = safe_unserialize(self::$saveFile);
+            $saveData = file_get_contents(self::$saveFile);
+
+            $saveData = unserialize($saveData, ['allowed_classes' => false]);
+            echo '<pre>';
+            print_r($saveData);
+            exit;
+            if ($saveData !== false) {
+                $configData = self::$helper->SafeUnserialize($saveData);
+            }
         } catch (Exception $e) {
-            echo 'Caught exception: ', $e->getMessage(), "\n";
+            // Potentially log the exception message somewhere
         }
 
+        return is_array($configData) ? $configData : false;
+    }
 
-        if ($configData === false || !is_array($configData)) {
-            // Properly handle and potentially log the error
-            // The unserialize() function returns FALSE on failure
-            // or if $fileContent is not a string. It's also possible the unserialized data is not an array
-            return null;
+    /**
+     * Sets the default time zone from the config
+     */
+    private function setDefaultTimezone(): void
+    {
+        $timeZone = self::config('general', 'tz');
+
+        if (!empty($timeZone)) {
+            date_default_timezone_set($timeZone);
         }
-
-        return $configData;
     }
 }
-
 #eof

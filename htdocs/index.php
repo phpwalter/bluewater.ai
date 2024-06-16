@@ -42,8 +42,11 @@ declare(strict_types=1); // strict mode
 namespace Bluewater;
 
 
-use Bluewater\Config;
+use App\AppBootstrap;
+use Bluewater\Conf;
 use Bluewater\Security\Session;
+
+use Exception;
 
 use const DIRECTORY_SEPARATOR;
 
@@ -89,7 +92,6 @@ define('SITE_ROOT', DS . 'var' . DS . 'www' . DS . 'Bluewater');
 /**
  * BLUEWATER defines where all the Bluewater Core files reside.
  *
- * This is a child directory of LIBRARY
  * Do not place a slash at the end of this path.
  *
  * @name     BLUEWATER
@@ -100,13 +102,15 @@ define('SITE_ROOT', DS . 'var' . DS . 'www' . DS . 'Bluewater');
  */
 define('BLUEWATER', SITE_ROOT . DS . 'Bluewater');
 
-
+/**
+ * Load the COMPOSER-based pathing
+ */
 require_once SITE_ROOT . DS . 'vendor/autoload.php';
 
 /**
  * Setup the environment
  */
-new Bootstrap();
+new AppBootstrap();
 
 
 // ******************************************************************
@@ -118,8 +122,17 @@ define('SESSION', true);
 
 // ******************************************************************
 
+
+// Call the method to start generating .ini files
+Conf::getInstance();
+
+exit;
+
 // Load Bluewater.ai CONFIG data
-Config::getInstance();
+try {
+    Config::getInstance();
+} catch (Exception $e) {
+}
 
 /*
  * Different environments require different levels of error reporting.
