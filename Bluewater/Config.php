@@ -90,7 +90,7 @@ class Config
      * @throws BluewaterException
      * @throws Exception
      */
-    public function __construct(bool $process_sections = true)
+    public function __constructX(bool $process_sections = true)
     {
         self::$helper = Helper::getInstance();
 

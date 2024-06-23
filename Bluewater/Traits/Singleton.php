@@ -25,7 +25,7 @@ use Exception;
  * Managing Singleton Instances
  *
  * @category Singleton
- * @package  Traits
+ * @package  Bluewater\Traits
  * @author   Walter Torres <walter@torres.ws>
  * @link     http://web.bluewatermvc.org
  *
@@ -43,11 +43,9 @@ trait Singleton
 // Class Properties
 
     /**
-     * Array to hold instances
-     *
-     * @var array
+     * @var self|null The single instance of the class
      */
-    private static array $instances = [];
+    private static self|null $instance = null;
 
 
 // ==========================================================
@@ -63,33 +61,49 @@ trait Singleton
      *
      * @param bool $forceNewInstance flag to force creation of new instance
      *
-     * @return object Singleton Instance of the class
+     * @return self The *Singleton* instance
      * @throws Exception
      */
-    final public static function getInstance(bool $forceNewInstance = false): object
+    final public static function getInstance(): self
     {
-        $called_class = static::class;
-
-        if ($forceNewInstance || !isset(static::$instances[$called_class])) {
-            try {
-                static::$instances[$called_class] = new $called_class();
-            } catch (Exception $exception) {
-                throw new Exception(
-                    "An exception occurred while creating an singleton instance: " . $exception->getMessage()
-                );
-            }
+        try {
+            return self::$instance ?? self::$instance = new static();
+        } catch (Exception $e) {
+            throw new Exception('Could not create instance of singleton class: ' . $e->getMessage());
         }
-
-        return static::$instances[$called_class];
     }
 
     /**
-     * Singleton Classes should not be clone-able
+     * Singleton constructor. Is declared private to prevent direct object creation.
+     */
+    final private function __construct()
+    {
+        $this->init();
+    }
+
+    /**
+     * Initialization method.
+     * If initialization is needed, it can be overwritten by singleton classes.
+     */
+    protected function init(): void
+    {
+    }
+
+    /**
+     * Method declared private to prevent unserialization of an instance of the *Singleton* class.
+     */
+    final public function __wakeup()
+    {
+        throw new Exception('Cannot unserialize singleton');
+    }
+
+    /**
+     * Method is declared private to prevent cloning of an instance of the *Singleton* class.
      */
     private function __clone()
     {
-        // Empty on purpose
     }
+
 
     /**
      * Singleton Classes should not be serialized
@@ -97,28 +111,10 @@ trait Singleton
      * @return array
      * @throws Exception
      */
-    public function __sleep(): array
+    final public function __sleep(): array
     {
         throw new Exception('Cannot serialize singleton');
     }
-
-    /**
-     * Singleton Classes should not be un-serialized
-     *
-     * @return void
-     * @throws Exception
-     */
-    public function __wakeup(): void
-    {
-        throw new Exception('Cannot unserialize singleton');
-    }
-
-    /**
-     * Declare an abstract constructor to ensure Singleton class will not be instantiated directly
-     *
-     * @abstract
-     */
-    abstract protected function __construct();
 
 }
 

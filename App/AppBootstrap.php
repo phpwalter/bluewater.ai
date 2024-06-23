@@ -36,7 +36,7 @@
  * @author      Walter Torres <walter@torres.ws>
  * @version     v.8.0 (11/02/2021)
  *
- * @copyright   Copyright (c) 2006 - 2021 Walter Torres <walter@torres.ws>
+ * @copyright   Copyright (c) 2006-2021 Walter Torres <walter@torres.ws>
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  *
  * @filesource
@@ -62,19 +62,7 @@ namespace App;
 //       "index.php" located in your application web root.
 
 
-/**
- * APP_ROOT defines where all the Application specific files reside.
- *
- * This should be outside your web-accessible directories.
- * Do not place a slash at the end of this path.
- *
- * @constant string
- *
- * @since    1.0
- *
- */
-
-const APP_ROOT = SITE_ROOT . DS . 'App';
+use const Bluewater\APP_ROOT;
 
 class AppBootstrap
 {

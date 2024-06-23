@@ -87,7 +87,7 @@ define('DS', DIRECTORY_SEPARATOR);
  * @since    1.0
  *
  */
-define('SITE_ROOT', DS . 'var' . DS . 'www' . DS . 'Bluewater');
+define('SITE_ROOT', DS . 'var' . DS . 'www' . DS . 'bluewater');
 
 /**
  * BLUEWATER defines where all the Bluewater Core files reside.
@@ -101,6 +101,19 @@ define('SITE_ROOT', DS . 'var' . DS . 'www' . DS . 'Bluewater');
  *
  */
 define('BLUEWATER', SITE_ROOT . DS . 'Bluewater');
+
+/**
+ * APP_ROOT defines where all the Application specific files reside.
+ *
+ * This should be outside your web-accessible directories.
+ * Do not place a slash at the end of this path.
+ *
+ * @constant string
+ *
+ * @since    1.0
+ *
+ */
+const APP_ROOT = SITE_ROOT . DS . 'App';
 
 /**
  * Load the COMPOSER-based pathing
@@ -122,10 +135,14 @@ define('SESSION', true);
 
 // ******************************************************************
 
-
+echo __LINE__ . '<br>';
 // Call the method to start generating .ini files
-Conf::getInstance();
-
+try {
+    Conf::getInstance();
+} catch (Exception $e) {
+    echo $e->getMessage();
+}
+echo __LINE__ . '<br>';
 exit;
 
 // Load Bluewater.ai CONFIG data
@@ -141,14 +158,14 @@ try {
 switch (BW_ENV) {
     case 'development':
         error_reporting(-1);
-        ini_set('display_errors', 1);
+        ini_set('display_errors', value: "1");
         echo '1';
         break;
 
     case 'testing':
     case 'production':
         error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_USER_NOTICE);
-        ini_set('display_errors', 0);
+        ini_set('display_errors', value: "0");
         echo '2';
         break;
 

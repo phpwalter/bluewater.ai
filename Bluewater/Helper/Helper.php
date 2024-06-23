@@ -4,19 +4,20 @@ declare(strict_types=1);
 
 namespace Bluewater\Helper;
 
-use Bluewater\Traits\Singleton;
+use Bluewater\Traits\Multiton;
 use Exception;
 
 /**
  * Helper class.
  *
  * @author Walter Torres <walter@torres.ws>
+ * @method CheckDir(string $directory)
  */
 class Helper
 {
 // ==========================================================
 // Class Traits
-    use Singleton;
+    use Multiton;
 
 // ==========================================================
 // Class Constants
@@ -25,21 +26,12 @@ class Helper
 // Class Properties
 
     /**
-     * @var Helper|null Holds the single instance of this class.
+     * @var self|null Holds the single instance of this class.
      */
-    private static ?Helper $instance = null;
+    private static self $instance;
 
 // ==========================================================
 // Class Methods
-
-    /**
-     * Private constructor to enforce the singleton pattern and load helper file.
-     *
-     */
-    private function __construct()
-    {
-        // Intentionally left blank
-    }
 
     /**
      * Load the helper file for a specific method.
