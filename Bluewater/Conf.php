@@ -190,12 +190,22 @@ class Conf
     {
         $processedConfig = [];
 
+        echo __METHOD__ . ': ' . __LINE__ . '<br>';
+        unset($this->rawConfig['New folder']);
+        print_r($this->rawConfig) . '<br>';
+
         // First pass: process all sections and settings
         foreach ($this->rawConfig as $section => $settings) {
+            echo __METHOD__ . ': ' . __LINE__ . '<br>';
+            print_r($settings) . '<br>';
+
             foreach ($settings as $key => $value) {
-                $processedConfig[$section][$key] = is_array($value) ? $this->processArray($value) : $this->processValue(
-                    $value
-                );
+                echo __LINE__ . ': ' . $key . '<br>';
+                $processedConfig[$section][$key] = is_array($value)
+                    ? $this->processArray($value)
+                    : $this->processValue(
+                        $value
+                    );
             }
         }
 
@@ -228,10 +238,26 @@ class Conf
      * @param array $array The array to be processed
      *
      * @return array Processed array
+     * @throws Exception
      */
-    private function processArray(array $array): array
+    private function processArray(array &$array): array
     {
-        return array_map([$this, 'processValue'], $array);
+        echo __METHOD__ . ': ' . __LINE__ . '<br>';
+        print_r($array) . '<br>';
+
+        // Now process each item in the array
+        foreach ($array as $key => &$value) {
+            echo '<hr>' . __LINE__ . ': ' . $key . '<br>';
+            echo __LINE__ . ': ' . $value . '<br>';
+
+            // Replace value by reference
+            $value = $this->processValue($value);
+
+            echo __LINE__ . ': ' . $value . '<br>';
+            print_r($array);
+        }
+
+        return $array;
     }
 
 
@@ -244,20 +270,31 @@ class Conf
      *
      * @throws Exception
      */
-    private function processValue(mixed $value): mixed
+    private function processValue($value): mixed
     {
+        echo '<hr>';
+        echo __METHOD__ . ': ' . __LINE__ . '<br>';
+        echo __LINE__ . ': ' . $value . '<br>';
+        print_r($this->rawConfig) . '<br>';
+
         if (is_string($value) && strpos($value, '{') !== false) {
             preg_match_all('/\{(.+?)\}/', $value, $matches);
             foreach ($matches[1] as $match) {
+                echo $match . ': ' . __LINE__ . '<br>';
+
                 if (defined($match)) {
                     $value = str_replace("{{$match}}", constant($match), $value);
-                } elseif (isset($this->rawConfig['CONSTANTS'][$match])) {
-                    $value = str_replace("{{$match}}", $this->rawConfig['CONSTANTS'][$match], $value);
+                    echo __LINE__ . ': ' . $value . '<br>';
+                } elseif (isset($this->rawConfig['Config']['constants'][$match])) {
+                    $value = str_replace("{{$match}}", $this->rawConfig['Config']['constants'][$match], $value);
+                    echo __LINE__ . ': ' . $value . '<br>';
                 } else {
                     throw new Exception("Constant '$match' not found in predefined constants or CONSTANTS array");
                 }
             }
         }
+
+        echo __LINE__ . ': ' . $value . '<hr>';
         return $value;
     }
 

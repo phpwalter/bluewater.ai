@@ -12,6 +12,7 @@ use RecursiveIteratorIterator;
 use RecursiveRegexIterator;
 use RegexIterator;
 use RuntimeException;
+use SplFileInfo;
 use SplObjectStorage;
 
 
@@ -29,6 +30,9 @@ class DirectoryReader
     private string $directory;
     private string $pattern;
     private SplObjectStorage $files;
+    private bool $recursive;
+    private array $cache = [];
+
 
     /**
      * DirectoryReader constructor.
@@ -37,7 +41,7 @@ class DirectoryReader
      * @param string $pattern The pattern to filter files.
      * @throws InvalidArgumentException If the directory does not exist or is not readable.
      */
-    public function __construct(string $directory, string $pattern = '/.*/')
+    public function __construct(string $directory, string $pattern = '/.*/', bool $recursive = true)
     {
         if (!is_dir($directory) || !is_readable($directory)) {
             throw new InvalidArgumentException("Directory not found or not readable: $directory");
@@ -45,6 +49,7 @@ class DirectoryReader
 
         $this->directory = $directory;
         $this->pattern = $pattern;
+        $this->recursive = $recursive;
         $this->files = new SplObjectStorage();
 
         try {
@@ -71,21 +76,22 @@ class DirectoryReader
      */
     private function loadFiles(): void
     {
-        try {
-            $directoryIterator = new RecursiveDirectoryIterator($this->directory);
-            $iterator = new RecursiveIteratorIterator($directoryIterator);
-            $regexIterator = new RegexIterator($iterator, $this->pattern);
-
-            foreach ($regexIterator as $file) {
-                $filePath = $file->getPathname();
-                if (file_exists($filePath)) {
-                    $fileHandler = new FileHandler($filePath);
-                    $this->files->attach($fileHandler);
-                }
-            }
-        } catch (Exception $e) {
-            throw new RuntimeException("Error loading files: " . $e->getMessage(), 0, $e);
+        if (isset($this->cache[$this->directory])) {
+            $this->files = $this->cache[$this->directory];
+            return;
         }
+
+        $iterator = $this->recursive ? new RecursiveDirectoryIterator($this->directory) : new DirectoryIterator(
+            $this->directory
+        );
+        $iterator = $this->recursive ? new RecursiveIteratorIterator($iterator) : $iterator;
+        $iterator = new RegexIterator($iterator, $this->pattern, RecursiveRegexIterator::GET_MATCH);
+
+        foreach ($iterator as $file) {
+            $this->files->attach(new SplFileInfo($file[0]));
+        }
+
+        $this->cache[$this->directory] = $this->files;
     }
 
     /**
@@ -125,7 +131,7 @@ class DirectoryReader
 
         $sortedFiles = iterator_to_array($this->files);
 
-        usort($sortedFiles, function (FileHandler $a, FileHandler $b) use ($attribute) {
+        usort($sortedFiles, static function (FileHandler $a, FileHandler $b) use ($attribute) {
             return $attribute === 'name'
                 ? strcmp($a->getFilename(), $b->getFilename())
                 : ($attribute === 'size'
@@ -307,6 +313,190 @@ class DirectoryReader
             throw new RuntimeException("Error moving files: " . $e->getMessage(), 0, $e);
         }
     }
+
+    /**
+     * Filter files by content.
+     *
+     * @param string $content The content to search for.
+     * @return SplObjectStorage Filtered files.
+     */
+    public function filterByContent(string $content): SplObjectStorage
+    {
+        $filteredFiles = new SplObjectStorage();
+        foreach ($this->files as $file) {
+            /** @var SplFileInfo $file */
+            $fileContent = file_get_contents($file->getPathname());
+            if (str_contains($fileContent, $content)) {
+                $filteredFiles->attach($file);
+            }
+        }
+        return $filteredFiles;
+    }
+
+    /**
+     * Filter files by extension.
+     *
+     * @param string $extension The file extension to filter by.
+     * @return SplObjectStorage Filtered files.
+     */
+    public function filterByExtension(string $extension): SplObjectStorage
+    {
+        $filteredFiles = new SplObjectStorage();
+        foreach ($this->files as $file) {
+            /** @var SplFileInfo $file */
+            if ($file->getExtension() === $extension) {
+                $filteredFiles->attach($file);
+            }
+        }
+        return $filteredFiles;
+    }
+
+    /**
+     * Filter files by a minimum and maximum size.
+     *
+     * @param int $minSize Minimum file size in bytes.
+     * @param int $maxSize Maximum file size in bytes.
+     * @return SplObjectStorage Filtered files.
+     */
+    public function filterBySize(int $minSize, int $maxSize): SplObjectStorage
+    {
+        $filteredFiles = new SplObjectStorage();
+        foreach ($this->files as $file) {
+            /** @var SplFileInfo $file */
+            $fileSize = $file->getSize();
+            if ($fileSize >= $minSize && $fileSize <= $maxSize) {
+                $filteredFiles->attach($file);
+            }
+        }
+        return $filteredFiles;
+    }
+
+    /**
+     * Filter files by a date range.
+     *
+     * @param string $startDate Start date in 'Y-m-d' format.
+     * @param string $endDate End date in 'Y-m-d' format.
+     * @return SplObjectStorage Filtered files.
+     */
+    public function filterByDate(string $startDate, string $endDate): SplObjectStorage
+    {
+        $filteredFiles = new SplObjectStorage();
+        $startTimestamp = strtotime($startDate);
+        $endTimestamp = strtotime($endDate);
+
+        foreach ($this->files as $file) {
+            /** @var SplFileInfo $file */
+            $fileTimestamp = $file->getMTime();
+            if ($fileTimestamp >= $startTimestamp && $fileTimestamp <= $endTimestamp) {
+                $filteredFiles->attach($file);
+            }
+        }
+        return $filteredFiles;
+    }
+
+    /**
+     * Sort files by name.
+     *
+     * @param bool $ascending Sort in ascending order if true, descending if false.
+     * @return SplObjectStorage Sorted files.
+     */
+    public function sortByName(bool $ascending = true): SplObjectStorage
+    {
+        $filesArray = iterator_to_array($this->files);
+        usort($filesArray, static function (SplFileInfo $a, SplFileInfo $b) use ($ascending) {
+            return $ascending ? strcmp($a->getFilename(), $b->getFilename()) : strcmp(
+                $b->getFilename(),
+                $a->getFilename()
+            );
+        });
+
+        $sortedFiles = new SplObjectStorage();
+        foreach ($filesArray as $file) {
+            $sortedFiles->attach($file);
+        }
+        return $sortedFiles;
+    }
+
+    /**
+     * Sort files by size.
+     *
+     * @param bool $ascending Sort in ascending order if true, descending if false.
+     * @return SplObjectStorage Sorted files.
+     */
+    public function sortBySize(bool $ascending = true): SplObjectStorage
+    {
+        $filesArray = iterator_to_array($this->files);
+        usort($filesArray, static function (SplFileInfo $a, SplFileInfo $b) use ($ascending) {
+            return $ascending ? ($a->getSize() <=> $b->getSize()) : ($b->getSize() <=> $a->getSize());
+        });
+
+        $sortedFiles = new SplObjectStorage();
+        foreach ($filesArray as $file) {
+            $sortedFiles->attach($file);
+        }
+        return $sortedFiles;
+    }
+
+    /**
+     * Sort files by modification date.
+     *
+     * @param bool $ascending Sort in ascending order if true, descending if false.
+     * @return SplObjectStorage Sorted files.
+     */
+    public function sortByDate(bool $ascending = true): SplObjectStorage
+    {
+        $filesArray = iterator_to_array($this->files);
+        usort($filesArray, static function (SplFileInfo $a, SplFileInfo $b) use ($ascending) {
+            return $ascending ? ($a->getMTime() <=> $b->getMTime()) : ($b->getMTime() <=> $a->getMTime());
+        });
+
+        $sortedFiles = new SplObjectStorage();
+        foreach ($filesArray as $file) {
+            $sortedFiles->attach($file);
+        }
+        return $sortedFiles;
+    }
+
+    /**
+     * Paginate files.
+     *
+     * @param int $page The page number.
+     * @param int $pageSize The number of files per page.
+     * @return SplObjectStorage The paginated files.
+     */
+    public function paginate(int $page, int $pageSize): SplObjectStorage
+    {
+        $filesArray = iterator_to_array($this->files);
+        $offset = ($page - 1) * $pageSize;
+        $paginatedFiles = array_slice($filesArray, $offset, $pageSize);
+
+        $result = new SplObjectStorage();
+        foreach ($paginatedFiles as $file) {
+            $result->attach($file);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Watch for changes in the directory.
+     *
+     * @param callable $callback The callback to execute on a change.
+     */
+    public function watchDirectory(callable $callback): void
+    {
+        $initialScan = iterator_to_array($this->files);
+
+        while (true) {
+            $currentScan = iterator_to_array($this->files);
+            if ($currentScan !== $initialScan) {
+                $callback();
+                $initialScan = $currentScan;
+            }
+            sleep(1); // Adjust the sleep time as needed
+        }
+    }
+
 }
 
 /*

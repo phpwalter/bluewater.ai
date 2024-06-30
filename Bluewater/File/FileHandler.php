@@ -18,6 +18,21 @@ use SplFileObject;
  */
 class FileHandler extends SplFileObject
 {
+    // ==========================================================
+// Class Traits
+
+
+// ==========================================================
+// Class Constants
+
+
+// ==========================================================
+// Class Properties
+
+
+// ==========================================================
+// Class Methods
+
     /**
      * FileHandler constructor.
      *
@@ -81,8 +96,10 @@ class FileHandler extends SplFileObject
     public function appendFile(string $content): void
     {
         try {
-            $this->fseek(0, SEEK_END); // Move to the end of the file
-            $this->fwrite($content);
+            $this->fseek(0, SEEK_END);
+            if ($this->fwrite($content) === false) {
+                throw new RuntimeException("Failed to append to file: " . $this->getPathname());
+            }
         } catch (Exception $e) {
             throw new RuntimeException("Error appending to file: " . $e->getMessage(), 0, $e);
         }
@@ -107,6 +124,9 @@ class FileHandler extends SplFileObject
     public function delete(): void
     {
         $filePath = $this->getPathname();
+        $this->fflush(); // Ensure all data is written to disk before deleting
+        $this->fclose();
+
         if (!unlink($filePath)) {
             throw new RuntimeException("Failed to delete file: $filePath");
         }
@@ -131,12 +151,12 @@ class FileHandler extends SplFileObject
      */
     public static function createTempFile(string $prefix = 'tmp'): FileHandler
     {
-        try {
-            $tempFilePath = tempnam(sys_get_temp_dir(), $prefix);
-            return new self($tempFilePath);
-        } catch (Exception $e) {
-            throw new RuntimeException("Error creating temporary file: " . $e->getMessage(), 0, $e);
+        $tempFile = tempnam(sys_get_temp_dir(), $prefix);
+        if ($tempFile === false) {
+            throw new RuntimeException("Failed to create temporary file");
         }
+
+        return new self($tempFile);
     }
 
     /**
@@ -171,12 +191,8 @@ class FileHandler extends SplFileObject
      */
     public function copyTo(string $destination): void
     {
-        try {
-            if (!copy($this->getPathname(), $destination)) {
-                throw new RuntimeException("Failed to copy file to: $destination");
-            }
-        } catch (Exception $e) {
-            throw new RuntimeException("Error copying file: " . $e->getMessage(), 0, $e);
+        if (!copy($this->getPathname(), $destination)) {
+            throw new RuntimeException("Failed to copy file to: $destination");
         }
     }
 
@@ -189,13 +205,79 @@ class FileHandler extends SplFileObject
      */
     public function moveTo(string $destination): void
     {
-        try {
-            $this->copyTo($destination);
-            $this->delete();
-        } catch (Exception $e) {
-            throw new RuntimeException("Error moving file: " . $e->getMessage(), 0, $e);
+        if (!rename($this->getPathname(), $destination)) {
+            throw new RuntimeException("Failed to move file to: $destination");
         }
     }
+
+    /**
+     * Lock the file.
+     *
+     * @param int $operation The lock operation (LOCK_SH, LOCK_EX).
+     * @return bool True if the lock was successful, false otherwise.
+     * @throws RuntimeException If there is an error locking the file.
+     */
+    public function lock(int $operation): bool
+    {
+        if (!$this->flock($operation)) {
+            throw new RuntimeException("Failed to lock file: " . $this->getPathname());
+        }
+        return true;
+    }
+
+    /**
+     * Unlock the file.
+     *
+     * @return bool True if the unlock was successful, false otherwise.
+     * @throws RuntimeException If there is an error unlocking the file.
+     */
+    public function unlock(): bool
+    {
+        if (!$this->flock(LOCK_UN)) {
+            throw new RuntimeException("Failed to unlock file: " . $this->getPathname());
+        }
+        return true;
+    }
+
+
+// ==========================================================
+// Static Class Methods
+
+    /**
+     * Check if the file exists.
+     *
+     * @param string $filePath The path of the file to check.
+     * @return bool True if the file exists, false otherwise.
+     */
+    public static function fileExists(string $filePath): bool
+    {
+        return file_exists($filePath);
+    }
+
+    /**
+     * Retrieves the content of a file.
+     *
+     * @param string $filePath Path to the file
+     *
+     * @return string File content
+     *
+     * @throws InvalidArgumentException if the file does not exist
+     * @throws RuntimeException if the file content cannot be read
+     */
+    public static function getFileContent(string $filePath): string
+    {
+        if (!file_exists($filePath)) {
+            throw new InvalidArgumentException("File does not exist: $filePath");
+        }
+
+        $content = file_get_contents($filePath);
+        if ($content === false) {
+            throw new RuntimeException("Failed to read file content: $filePath");
+        }
+
+        return $content;
+    }
+
 }
 
 /*
