@@ -4,34 +4,29 @@ declare(strict_types=1);
 
 namespace Bluewater;
 
+use Bluewater\File\FileHandler;
 use Bluewater\File\DirectoryReader;
-use Bluewater\Exception\BluewaterDirException;
-use Bluewater\Exception\BluewaterFileException;
 use Bluewater\Helper\Helper;
 use Bluewater\Traits\Multiton;
 use Exception;
-
-use PhpStreams\Stream;
+use JetBrains\PhpStorm\NoReturn;
 
 class Conf
 {
-
-// ==========================================================
-// Class Traits
+    // ==========================================================
+    // Class Traits
     use Multiton;
 
-// ==========================================================
-// Class Constants
+    // ==========================================================
+    // Class Constants
 
-
-// ==========================================================
-// Class Properties
+    // ==========================================================
+    // Class Properties
 
     /**
      * The path to the configuration files.
      */
-    private const CONFIG_PATH = '/Config';
-
+    private DirectoryReader $configPath;
 
     /**
      * An instance of the Helper class, used for helper functions.
@@ -48,24 +43,10 @@ class Conf
     private static ?array $conf = null;
 
     private array $configDirs = [
-        BLUEWATER . DS . 'Config'
-        ,
+        BLUEWATER . DS . 'Config',
         APP_ROOT . DS . 'Config'
     ];
 
-    /**
-     * Directory to scan
-     *
-     * @var DirectoryReader
-     */
-    private DirectoryReader $directoryToScan;
-
-    /**
-     * The array which will hold constants and configs extracted from '.ini.php' files
-     * as separate keys.
-     *
-     * @var array
-     */
     private array $rawConfig = [];
 
     /**
@@ -75,83 +56,60 @@ class Conf
      */
     private array $constantsAndConfigs = [];
 
-
-// ==========================================================
-// Class Methods
+    // ==========================================================
+    // Class Methods
 
     /**
      * @throws Exception
      */
     public function init(): void
     {
-        echo __LINE__ . '<br>';
+        echo __METHOD__ . ': ' . __LINE__ . '<br>';
+
         self::$helper = Helper::getInstance();
 
-        array_walk($this->configDirs, [$this, 'loadIniFiles']);
+        array_walk($this->configDirs, [$this, 'loadConfigFiles']);
     }
-
-
-    /*
-     * There are 2 directories to look into:
-     *  - Bluewater\Config
-     *  - App\Config
-     *
-     * Each directory will contain one or more '*.ini.php' files.
-     * These are the raw configuration data.
-     *
-     * Each directory may, or may not, contains a single "*.ini'.
-     * This is the serialized config data for faster processing on
-     * subsequent application loads
-     *
-     * 1) Check Bluewater\Config for the existence of a single "*.ini" file
-     *  a) if found, load and unserialize
-     *  b) if not found, load all "*.ini" files and serialize the data
-     *     and place in a new "bluewater.ini"
-     *
-     * 2) Repeat #1 for "App\Config" directory.
-     *
-     *
-     */
 
     /**
      * @param string $directory
      * @throws Exception
      */
-    private function loadIniFiles(string $directory): void
+    private function loadConfigFiles(string $directory): void
     {
-        // This is used in other places. No need to pass it around
-        $this->directoryToScan = new DirectoryReader($directory);
-
-        echo '<pre>';
-        print_r($this->directoryToScan) . "<br>";
-
         try {
-            $files = $this->directoryToScan->getFiles(['ini']);
+            // Use DirectoryReader to scan the directory for .ini files
+            $this->configPath = new DirectoryReader($directory, '/\.ini$/');
+            $iniFiles = $this->configPath->getFiles();
 
-            // We have a SERIALIZED INI file, load it
-            if ($files) {
-                $this->loadSerializedConfig($files[0]);
-            } // Otherwise, load all 'ini.php' files
-            else {
-                $files = $this->directoryToScan->getFiles(['ini.php']);
+            if (count($iniFiles) > 0) {
+                // Call loadSerializedConfig if .ini files are found
+                $this->loadSerializedConfig($iniFiles);
+            } else {
+                // Scan the directory for .ini.php files if no .ini files are found
+                $directoryReader = new DirectoryReader($directory, '/\.ini\.php$/');
+                $iniPhpFiles = $directoryReader->getFiles();
 
-                if ($files) {
-                    $this->loadRawConfig($files);
-                    $this->generateIniFileContent();
+                if (count($iniPhpFiles) > 0) {
+                    // Call loadRawConfig if .ini.php files are found
+                    $this->loadRawConfig($iniPhpFiles);
+                    $this->processAndSerializeConfig();
+
+                    // Optionally, you can process the raw config as needed
+                    // For demonstration, we'll just print the config
+                } else {
+                    throw new Exception("No configuration files found in directory: $directory");
                 }
-//                else {
-//                    throw new BluewaterDirException("Directory, $directory, does not contain RAW INI files");
-//                }
             }
         } catch (Exception $e) {
-            //           throw new BluewaterDirException($directory, 11, $e);
+            echo 'Error: ' . $e->getMessage() . '<br>';
         }
     }
 
     /**
-     * Load serialized configuration from an array of SplFileInfo Objects.
+     * Load serialized configuration from an array of FileHandler Objects.
      *
-     * @param array $files array of SplFileInfo Objects.
+     * @param FileHandler[] $files array of FileHandler Objects.
      * @return void
      * @throws Exception
      */
@@ -162,129 +120,179 @@ class Conf
     }
 
     /**
-     * Load unserialized configuration from an array of SplFileInfo Objects.
+     * Load unserialized configuration from an array of FileHandler Objects.
      *
-     * @param array $splFileInfoObjects array of SplFileInfo Objects.
+     * @param FileHandler[] $files array of FileHandler Objects.
      * @return void
      * @throws Exception
      */
-    private function loadRawConfig(array $splFileInfoObjects): void
+    private function loadRawConfig(array $files): void
     {
-        echo __METHOD__ . ': ' . __LINE__ . '<br>';
+        $resultantIniArray = [];
 
-        $resultantIniArray[$this->directoryToScan] = [];
+        foreach ($files as $fileHandler) {
+            if ($fileHandler->isFile()) {
+                $basename = $fileHandler->getBasename();
+                $parentname = $fileHandler->getPathInfo()->getFilename();
 
-        foreach ($splFileInfoObjects as $file) {
-            if ($file->isFile()) {
-                $basename = $file->getBasename();
-                $parentname = $file->getPathInfo()->getFilename();
-
-                $rawConfigs[$basename] = parse_ini_file($file->getRealPath(), true);
+                $rawConfigs[$basename] = parse_ini_file($fileHandler->getRealPath(), true);
 
                 foreach ($rawConfigs[$basename] as $key => $value) {
-                    if (isset($resultantIniArray[$this->directoryToScan][$key])) {
-                        $resultantIniArray[$this->directoryToScan][$key] = array_merge(
-                            $resultantIniArray[$this->directoryToScan][$key],
+                    if (isset($resultantIniArray[$parentname][$key])) {
+                        $resultantIniArray[$parentname][$key] = array_merge(
+                            $resultantIniArray[$parentname][$key],
                             $value
                         );
                     } else {
-                        $resultantIniArray[$this->directoryToScan][$key] = $value;
+                        $resultantIniArray[$parentname][$key] = $value;
                     }
                 }
             }
         }
 
-
-        print_r($resultantIniArray) . '<br>';
-        exit;
+        $this->rawConfig = $resultantIniArray;
     }
 
     /**
-     * Recursive function to check directories for '.ini.php' files, generate data for '.ini' files
-     * and create '.ini' files if none exist in the directory.
+     * Process and serialize configuration
      *
-     * @param string $directory
-     * @throws Exception
+     * @throws Exception If there was an error writing to the file
      */
-    private function loadIniFilesXX(string $directory): void
+    private function processAndSerializeConfig(): void
     {
-        echo $directory . "<br>";
+        echo __METHOD__ . ': ' . __LINE__ . '<br>';
+        $this->processConfiguration();
+        echo __METHOD__ . ': ' . __LINE__ . '<br>';
+        print_r($this->rawConfig) . '<br>';
+        exit;
+        $serializedData = $this->serializeConfiguration();
 
-        // Open directory for reading
+        $filePath = $this->configPath->getDirectoryPath() . '/processed_config.ini';
 
-        /** @TODO Need better exception handling */
-        try {
-            $dirHandle = self::$helper->CheckDir($directory);
-        } catch (BluewaterDirException $e) {
-            echo 'oops: ' . $directory;
-            exit;
+        if (file_put_contents($filePath, $serializedData) === false) {
+            throw new Exception('Unable to write to file: ' . $filePath);
         }
+    }
 
-        // Read all entries in the directory
-        while (($entry = readdir($dirHandle)) !== false) {
-            if ($entry !== "." && $entry !== "..") {
-                $filePath = $directory . DS . $entry;
+    /**
+     * Process the received configuration.
+     *
+     * Constants are processed in two passes to ensure the correct replacement of nested constants.
+     * In the first pass, all settings are processed.
+     * In the second pass, just the CONSTANTS are reprocessed.
+     * This will ensure that every constant used in the definition of another constant is resolved.
+     *
+     * @return void
+     *
+     * @throws Exception If a constant is not found in predefined constants or CONSTANTS array
+     */
+    private function processConfiguration(): void
+    {
+        $processedConfig = [];
 
-                if (is_dir($filePath)) {
-                    // Recursive call for subdirectories
-                    $this->loadIniFiles($filePath);
-                } elseif (str_ends_with($filePath, 'ini.php')) {
-                    $this->extractData($filePath);
-                }
+        // First pass: process all sections and settings
+        foreach ($this->rawConfig as $section => $settings) {
+            foreach ($settings as $key => $value) {
+                $processedConfig[$section][$key] = is_array($value) ? $this->processArray($value) : $this->processValue(
+                    $value
+                );
             }
         }
 
+        // Second pass: reprocess just the CONSTANTS section
+        if (isset($processedConfig['CONSTANTS'])) {
+            foreach ($processedConfig['CONSTANTS'] as $key => $value) {
+                $processedConfig['CONSTANTS'][$key] = $this->processValue($value);
+            }
+        }
 
-//
-//        // At this point we've done a full scan of $directory
-//        $directoryArr = explode('/', $directory);
-//
-//        // We'll need to filter out empty string caused by the last '/'
-//        $filteredArr = array_filter($directoryArr);
-//
-//        // Get the directory's name (ie: the last value in the array)
-//        $directoryName = end($filteredArr);
-//
-//        if (!file_exists($directory . '/' . $directoryName . '.ini')) {
-//            $this->createIniFile($directory, $directoryName . '.ini', $this->constantsAndConfigs);
-//        }
-
-        closedir($handle);
+        // Update rawConfig with the result of two-pass processing
+        $this->rawConfig = $processedConfig;
     }
 
     /**
-     * Generates the content for the new '.ini' file as a string.
+     * Serialize configuration
      *
-     * @param array $data
-     * @return string
+     * @param void
+     *
+     * @return string The serialized configuration
      */
-    private function generateIniFileContent(array $data): string
+    private function serializeConfiguration(): string
     {
-        $contentConfigs = "";
+        return serialize($this->rawConfig);
+    }
 
-        // Remove CONSTANTS
-        $filteredConfigs = array_filter($data, static function ($k) {
-            return $k !== 'constants';
-        }, ARRAY_FILTER_USE_KEY);
+    /**
+     * Process array
+     *
+     * @param array $array The array to be processed
+     *
+     * @return array Processed array
+     */
+    private function processArray(array $array): array
+    {
+        return array_map([$this, 'processValue'], $array);
+    }
 
-        // Prepare content for Configs
-        foreach ($filteredConfigs as $key => $value) {
-            $contentConfigs .= "$key = \"$value\"\n";
+
+    /**
+     * Process value
+     *
+     * @param mixed $value The value to be processed
+     *
+     * @return mixed Processed value
+     *
+     * @throws Exception
+     */
+    private function processValue(mixed $value): mixed
+    {
+        if (is_string($value) && strpos($value, '{') !== false) {
+            preg_match_all('/\{(.+?)\}/', $value, $matches);
+            foreach ($matches[1] as $match) {
+                if (defined($match)) {
+                    $value = str_replace("{{$match}}", constant($match), $value);
+                } elseif (isset($this->rawConfig['CONSTANTS'][$match])) {
+                    $value = str_replace("{{$match}}", $this->rawConfig['CONSTANTS'][$match], $value);
+                } else {
+                    throw new Exception("Constant '$match' not found in predefined constants or CONSTANTS array");
+                }
+            }
+        }
+        return $value;
+    }
+
+    /**
+     * Replace constants in value
+     *
+     * @param string $value The value in which constants are replaced
+     * @param array $matches The matches that contains constant keys
+     *
+     * @return string The value with replaced constants
+     */
+    /**
+     * Replace constants in value
+     *
+     * @param string $value The value in which constants are replaced
+     * @param array $matches The matches that contains constant keys
+     *
+     * @return string The value with replaced constants
+     *
+     * @throws Exception If a constant is not found
+     */
+    private function replaceConstantsInValue(string $value, array $matches): string
+    {
+        foreach ($matches as $match) {
+            if (defined($match)) {
+                $value = str_replace("{{$match}}", constant($match), $value);
+            } elseif (isset($this->rawConfig['CONSTANTS'][$match])) {
+                $value = str_replace("{{$match}}", $this->rawConfig['CONSTANTS'][$match], $value);
+            } else {
+                throw new Exception("Constant '{$match}' not found in predefined constants or CONSTANTS array");
+            }
         }
 
-        $iniFileContent = "[config]\n" . $contentConfigs;
-
-        // Prepare content for CONSTANTS
-        $contentConstants = '';
-        foreach ($data['constants'] as $key => $value) {
-            $contentConstants .= "$key = \"$value\"\n";
-        }
-
-        $iniFileContent .= "\n[constants]\n" . $contentConstants;
-
-        return $iniFileContent;
+        return $value;
     }
 }
-
 
 // eof

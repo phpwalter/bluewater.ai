@@ -24,7 +24,7 @@ exit;
 LOGGER_SQL   = 'false'
 LOGGER_ERR   = 'false'
 LOGGER_TRACE = 'false'
-LOG_PATH     = {CACHE_ROOT}{DS}logs
+LOG_PATH     = {SITE_ROOT}{DS}logs
 
 ; PHP error logging values
 ; http://php.net/manual/en/function.error-log.php

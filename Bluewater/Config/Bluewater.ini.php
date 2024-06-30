@@ -33,28 +33,6 @@ ARRAY_DELIM = ,
 
 
 ; ------------------------------------------------------------
-; Variable types
-TYPE_UNKNOWN      = -1
-TYPE_NULL         =  0
-TYPE_INT          =  1
-TYPE_INTEGER      =  1
-TYPE_LONG         =  2   ; not yet implemented
-TYPE_STRING       =  3
-TYPE_FLOAT        =  4
-TYPE_DOUBLE       =  5   ; not yet implemented
-TYPE_BOOL         =  6
-TYPE_ARRAY        =  7
-TYPE_OBJECT       =  8
-TYPE_OUTPUT       =  9
-TYPE_FILE         = 10
-TYPE_XML          = 11
-TYPE_JSON         = 12
-TYPE_ALPHA        = 13
-TYPE_ALPHANUM     = 14
-TYPE_ALPHANUMERIC = 14
-
-
-; ------------------------------------------------------------
 ; File and Directory Modes
 ; These prefs used when checking and setting modes when working
 ; with the file system. Octal values should always be used to

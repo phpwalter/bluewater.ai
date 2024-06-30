@@ -62,8 +62,6 @@ namespace App;
 //       "index.php" located in your application web root.
 
 
-use const Bluewater\APP_ROOT;
-
 class AppBootstrap
 {
 

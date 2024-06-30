@@ -55,6 +55,16 @@ class DirectoryReader
     }
 
     /**
+     * Get the directory path.
+     *
+     * @return string The directory path.
+     */
+    public function getDirectoryPath(): string
+    {
+        return $this->directory;
+    }
+
+    /**
      * Load files from the directory based on the pattern and store them in SplObjectStorage.
      *
      * @throws RuntimeException If an error occurs while loading files.
@@ -64,11 +74,14 @@ class DirectoryReader
         try {
             $directoryIterator = new RecursiveDirectoryIterator($this->directory);
             $iterator = new RecursiveIteratorIterator($directoryIterator);
-            $regexIterator = new RegexIterator($iterator, $this->pattern, RecursiveRegexIterator::GET_MATCH);
+            $regexIterator = new RegexIterator($iterator, $this->pattern);
 
             foreach ($regexIterator as $file) {
-                $fileHandler = new FileHandler($file[0]);
-                $this->files->attach($fileHandler);
+                $filePath = $file->getPathname();
+                if (file_exists($filePath)) {
+                    $fileHandler = new FileHandler($filePath);
+                    $this->files->attach($fileHandler);
+                }
             }
         } catch (Exception $e) {
             throw new RuntimeException("Error loading files: " . $e->getMessage(), 0, $e);

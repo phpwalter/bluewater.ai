@@ -113,7 +113,22 @@ define('BLUEWATER', SITE_ROOT . DS . 'Bluewater');
  * @since    1.0
  *
  */
-const APP_ROOT = SITE_ROOT . DS . 'App';
+
+define('APP_ROOT', SITE_ROOT . DS . 'App');
+
+define('CACHE_ROOT', SITE_ROOT . DS . 'cache');
+
+
+/**
+ * Industry standard locations for various file types served by web servers
+ *
+ */
+define('IMAGE_PATH', SITE_ROOT . DS . 'htdocs' . DS . 'images');
+define('JS_PATH', SITE_ROOT . DS . 'htdocs' . DS . 'js');
+define('CSS_PATH', SITE_ROOT . DS . 'htdocs' . DS . 'css');
+
+
+// ******************************************************************
 
 /**
  * Load the COMPOSER-based pathing
@@ -135,14 +150,17 @@ define('SESSION', true);
 
 // ******************************************************************
 
-echo __LINE__ . '<br>';
+
+echo '<pre>';
+
 // Call the method to start generating .ini files
 try {
     Conf::getInstance();
 } catch (Exception $e) {
     echo $e->getMessage();
 }
-echo __LINE__ . '<br>';
+
+echo 'index: ' . __LINE__ . '<br>';
 exit;
 
 // Load Bluewater.ai CONFIG data

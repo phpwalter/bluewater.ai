@@ -106,13 +106,13 @@ class Config
      * @throws BluewaterException
      */
     private function loadAllConf(): mixed
-    {``
+    {
         $baseName = 'Bluewater.ini';
         $alternativeName = 'Bluewater.ini.php';
 
         if (file_exists($baseName)) {
             $data = file_get_contents($baseName);
-            if ($unserializedData = @unserialize($data)) {
+            if ($unserializedData = @unserialize($data, false)) {
                 return $unserializedData;
             }
         }
@@ -154,10 +154,8 @@ class Config
     {
         $configData = null;
 
-        serialize();
         echo self::$saveFile . '<br>';
-        echo __LINE__ . '<br>';
-        echo __FUNCTION__ . '<p>';
+        echo __METHOD__ . ': ' . __LINE__ . '<br>';
 
         try {
             $saveData = file_get_contents(self::$saveFile);
